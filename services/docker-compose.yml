@@ -1,0 +1,15 @@
+version: '3'
+
+services:
+  redis:
+    image: redis/redis-stack
+    container_name: scaddr_redis
+    ports:
+      - "6379:6379"
+      - "8001:8001"
+    volumes:
+      - scaddr_redis:/data
+
+volumes:
+  scaddr_redis:
+
