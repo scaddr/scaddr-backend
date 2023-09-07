@@ -52,17 +52,22 @@ apiSocket.on("connection", (socket) => {
     let socketData = {}
 
     socket.on("disconnect", async () => {
-        console.log("Client Disconnected")
-        // const roomId = socketData["roomId"]
-        // const username = socketData["username"]
+        const roomId = socketData["room"]
+        const username = socketData["username"]
 
-        // const room = await redisClient.hGet("room", roomId);  
-        // delete room["users"][username]
+        if (roomId == null) {
+            return
+        }
 
-        // socket.broadcast.to(`room:${roomId}`).emit("userEvent", {
-        //     status: "ok",
-        //     username: username
-        // })
+        const room = JSON.parse(await redisClient.hGet("rooms", roomId))
+        delete room["users"][username]
+
+        await redisClient.hSet("rooms", roomId, JSON.stringify(room))
+
+        apiSocket.to(`room:${roomId}`).emit("joinedUsers", {
+            status: "ok",
+            users: Object.keys(room["users"])
+        })
     })
 
     socket.on("createRoom", async (data, callback) => {
@@ -121,7 +126,13 @@ apiSocket.on("connection", (socket) => {
 
             socketData["username"] = username;
             socketData["room"] = newRoomId;
+
             socket.join(`room:${newRoomId}`)
+
+            apiSocket.to(`room:${newRoomId}`).emit("joinedUsers", {
+                status: "ok",
+                users: Object.keys(newRoom["users"])
+            })
 
             callback({
                 status: "ok",
@@ -182,7 +193,13 @@ apiSocket.on("connection", (socket) => {
 
             socketData["username"] = username;
             socketData["room"] = roomId;
+
             socket.join(`room:${roomId}`)
+
+            apiSocket.to(`room:${roomId}`).emit("joinedUsers", {
+                status: "ok",
+                users: Object.keys(updatedRoom["users"])
+            })
 
             callback({
                 status: "ok",
@@ -223,8 +240,6 @@ apiSocket.on("connection", (socket) => {
                 throw new Error("Username does not exist in this room")
             }
 
-            console.log(usernameHash)
-            console.log(roomInformation["users"][username])
             if (usernameHash !== roomInformation["users"][username]) {
                 throw new Error("Username hash outdated") 
             }
