@@ -62,6 +62,14 @@ apiSocket.on("connection", (socket) => {
         const room = JSON.parse(await redisClient.hGet("rooms", roomId))
         delete room["users"][username]
 
+        // if there's no users in the room, delete it 
+        const numberOfUsers = Object.keys(room["users"]).length
+        if (numberOfUsers <= 0) {
+            await redisClient.hDel("rooms", roomId)
+            return
+        }
+
+        // update the information in the database
         await redisClient.hSet("rooms", roomId, JSON.stringify(room))
 
         apiSocket.to(`room:${roomId}`).emit("joinedUsers", {
@@ -98,7 +106,7 @@ apiSocket.on("connection", (socket) => {
 
             const newRoom = {
                 id: newRoomId, 
-                owner: username,
+                leader: username,
                 status: "lobby",
                 users: {
                     [username]: usernameHash
@@ -244,10 +252,14 @@ apiSocket.on("connection", (socket) => {
                 throw new Error("Username hash outdated") 
             }
 
+            // get the user role
+            const userRole = username === roomInformation["leader"] ? "leader" : "player"
+
             socket.join(`room:${roomId}`)
 
             callback({
-                status: "ok"
+                status: "ok",
+                userRole
             })
         } 
         catch (e) {
