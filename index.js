@@ -51,6 +51,14 @@ const apiSocket = new Server(httpServer, {
 apiSocket.on("connection", (socket) => {
     let socketData = {}
 
+    const broadcastConnectedUsers = (roomId, roomData) => {
+        apiSocket.to(`room:${roomId}`).emit("joinedUsers", {
+            status: "ok",
+            users: Object.keys(roomData["users"]),
+            leader: roomData["leader"]
+        })
+    } 
+
     socket.on("disconnect", async () => {
         const roomId = socketData["room"]
         const username = socketData["username"]
@@ -60,22 +68,26 @@ apiSocket.on("connection", (socket) => {
         }
 
         const room = JSON.parse(await redisClient.hGet("rooms", roomId))
+
         delete room["users"][username]
 
-        // if there's no users in the room, delete it 
+        // re-elect a leader in case the leader left
+        if (username === room["leader"]) {
+            room["leader"] = Object.keys(room["users"])[0]
+        }
+
+        // if there's no users in the room, delete its data
         const numberOfUsers = Object.keys(room["users"]).length
         if (numberOfUsers <= 0) {
             await redisClient.hDel("rooms", roomId)
+            await redisClient.del(`room:${roomId}:cards`)
             return
         }
 
         // update the information in the database
         await redisClient.hSet("rooms", roomId, JSON.stringify(room))
 
-        apiSocket.to(`room:${roomId}`).emit("joinedUsers", {
-            status: "ok",
-            users: Object.keys(room["users"])
-        })
+        broadcastConnectedUsers(roomId, room)
     })
 
     socket.on("createRoom", async (data, callback) => {
@@ -137,16 +149,20 @@ apiSocket.on("connection", (socket) => {
 
             socket.join(`room:${newRoomId}`)
 
-            apiSocket.to(`room:${newRoomId}`).emit("joinedUsers", {
+            // send user update information to all the clients 
+            broadcastConnectedUsers(newRoomId, newRoom)
+            
+            // send room state to this socket 
+            socket.emit("gameStatus", {
                 status: "ok",
-                users: Object.keys(newRoom["users"])
+                roomStatus: newRoom["status"]
             })
 
             callback({
                 status: "ok",
                 username,
                 usernameHash,
-                roomId: newRoomId
+                roomId: newRoomId,
             })
         } 
         catch (e) {
@@ -204,16 +220,20 @@ apiSocket.on("connection", (socket) => {
 
             socket.join(`room:${roomId}`)
 
-            apiSocket.to(`room:${roomId}`).emit("joinedUsers", {
+            // send user update information to all the clients 
+            broadcastConnectedUsers(roomId, updatedRoom)
+
+            // send room state to this socket 
+            socket.emit("gameStatus", {
                 status: "ok",
-                users: Object.keys(updatedRoom["users"])
+                roomStatus: updatedRoom["status"]
             })
 
             callback({
                 status: "ok",
                 username,
                 usernameHash,
-                roomId 
+                roomId,
             })
         } 
         catch (e) {
@@ -252,17 +272,69 @@ apiSocket.on("connection", (socket) => {
                 throw new Error("Username hash outdated") 
             }
 
-            // get the user role
-            const userRole = username === roomInformation["leader"] ? "leader" : "player"
-
             socket.join(`room:${roomId}`)
 
             callback({
-                status: "ok",
-                userRole
+                status: "ok"
             })
         } 
         catch (e) {
+            callback({
+                status: "failed",
+                reason: e.toString()
+            })
+        }
+    })
+
+    socket.on("startGame", async (data, callback) => {
+        try {
+            const roomId = data?.roomId ?? ""
+            const username = (data?.username ?? "").trim()
+            const usernameHash = (data?.usernameHash ?? "").trim()
+
+            if (roomId == "") {
+                throw new Error("Invalid room ID submitted")
+            }
+
+            if (username == "" || username == "system") {
+                throw new Error("Invalid username submitted")
+            }
+
+            if (usernameHash == "") {
+                throw new Error("Invalid userhash submitted")
+            }
+
+            const room = JSON.parse(await redisClient.hGet("rooms", roomId))
+
+            if (!(username in room["users"])) {
+                throw new Error("Given username not found")
+            }
+
+            if (usernameHash !== room["users"][username]) {
+                throw new Error("Failed to authenticate with given user/userhash")
+            }
+
+            if (username !== room["leader"]) {
+                throw new Error("Cannot start game - user is not leader")
+            }
+
+            const updatedRoom = {
+                ...room,
+                status: "game"
+            } 
+
+            await redisClient.hSet("rooms", roomId, JSON.stringify(updatedRoom))
+
+            // broadcast change to players 
+            apiSocket.to(`room:${roomId}`).emit("gameStatus", {
+                status: "ok",
+                roomStatus: updatedRoom["status"]
+            })
+
+            callback({
+                status: "ok"
+            })
+        } catch (e) {
             callback({
                 status: "failed",
                 reason: e.toString()
