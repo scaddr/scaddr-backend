@@ -25,6 +25,7 @@
     "generate-password": "^1.7.0",
     "http": "^0.0.1-security",
     "redis": "^4.6.8",
+    "shuffle-array": "^1.0.1",
     "socket.io": "^4.7.2",
     "uuid": "^9.0.0"
   }
