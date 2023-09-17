@@ -1,10 +1,8 @@
 const { apiSocket } = require("../server.js")
 const redisClient = require("../redis.js")
 
-const electUser = (roomId) => {
-    console.log(`Electing user for room: ${roomId}`)
-    return "yes" // TODO
-}
+const { pokeQuestion } = require("../functions/gameplayFunctions.js")
+
 
 const startGame = async (data, callback, socket, socketData) => {
     try {
@@ -51,15 +49,18 @@ const startGame = async (data, callback, socket, socketData) => {
             roomStatus: updatedRoom["status"]
         })
 
-        // user election
-        const electedUser = electUser(roomId)
-
         callback({
-            status: "ok"
+            status: "ok",
+            level: "startGame"
         })
+
+        // poke question
+        console.log(`Poking question inside room ${roomId}`)
+        pokeQuestion(roomId)
     } catch (e) {
         callback({
             status: "failed",
+            level: "startGame",
             reason: e.toString()
         })
     }

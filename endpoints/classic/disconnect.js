@@ -1,11 +1,16 @@
 const redisClient = require("../../redis.js")
 const { broadcastConnectedUsers } = require("../../functions/socketFunctions.js")
+const { pokeQuestion } = require("../../functions/gameplayFunctions.js")
 
 const disconnect = async (socket, socketData) => {
     const roomId = socketData["room"]
     const username = socketData["username"]
 
     if (roomId == null) {
+        return
+    }
+
+    if (username == "") { 
         return
     }
 
@@ -30,6 +35,13 @@ const disconnect = async (socket, socketData) => {
     await redisClient.hSet("rooms", roomId, JSON.stringify(room))
 
     broadcastConnectedUsers(roomId, room)
+
+    // if the interrogated user left, poke a new question
+    const questionBody = await redisClient.json.get(`room:${roomId}:question`)
+    if (username == questionBody?.user ?? "") {
+        await pokeQuestion(roomId)
+    }
+
 }
 
 module.exports = disconnect

@@ -3,7 +3,7 @@ const { createHash } = require("node:crypto")
 const redisClient = require("../redis.js")
 
 // functions
-const { broadcastConnectedUsers } = require("../functions/socketFunctions.js")
+const { broadcastConnectedUsers, sendQuestion } = require("../functions/socketFunctions.js")
 
 const joinRoom = async (data, callback, socket, socketData) => {
     try {
@@ -47,6 +47,7 @@ const joinRoom = async (data, callback, socket, socketData) => {
 
         await redisClient.hSet("rooms", roomId, JSON.stringify(updatedRoom));
 
+        // save socket data to identify the client in anonymous socket endpoints (i.e. disconnect)
         socketData["username"] = username;
         socketData["room"] = roomId;
 
@@ -54,6 +55,9 @@ const joinRoom = async (data, callback, socket, socketData) => {
 
         // send user update information to all the clients 
         broadcastConnectedUsers(roomId, updatedRoom)
+
+        // send the ongoing question to the connected client
+        sendQuestion(socket, roomId)
 
         // send room state to this socket 
         socket.emit("gameStatus", {

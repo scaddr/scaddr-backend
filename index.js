@@ -1,6 +1,5 @@
 // import server 
 const { app, apiSocket } = require("./server.js")
-const redisClient = require("./redis.js")
 
 // import endpoints
 const disconnect = require("./endpoints/classic/disconnect.js")

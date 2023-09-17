@@ -1,4 +1,5 @@
 const { apiSocket } = require("../server.js")
+const redisClient = require("../redis.js")
 
 const broadcastConnectedUsers = (roomId, roomData) => {
     apiSocket.to(`room:${roomId}`).emit("joinedUsers", {
@@ -8,6 +9,17 @@ const broadcastConnectedUsers = (roomId, roomData) => {
     })
 }
 
+const sendQuestion = async (socket, roomId) => {
+    const question = await redisClient.json.get(`room:${roomId}:question`)
+    if (question === null) {
+        return
+    }
+
+    question.status = "ok"
+    socket.emit("pokeQuestion", question)
+}
+
 module.exports = {
-    broadcastConnectedUsers
+    broadcastConnectedUsers,
+    sendQuestion
 }
