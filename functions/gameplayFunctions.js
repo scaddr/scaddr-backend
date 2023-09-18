@@ -13,7 +13,6 @@ const electUser = async (roomId) => {
 
 const pokeQuestion = async (roomId) => {
     const user = await electUser(roomId)
-    console.log(`Elected a new user ${user} for the question.`)
 
     const cardsNumber = await redisClient.lLen(`room:${roomId}:cards`)
     const correctCard = JSON.parse(await redisClient.lIndex(`room:${roomId}:cards`, Math.floor(Math.random()*cardsNumber)))
