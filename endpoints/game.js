@@ -66,6 +66,7 @@ const pokeAnswer = async (data, callback, socket, socketData) => {
 
     } catch (e) {
         console.error(e)
+        // TODO: add callback / return the error the the client
     }
 }
 
