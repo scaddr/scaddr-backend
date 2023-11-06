@@ -17,6 +17,8 @@ Goals and features:
  - [x] On Disconnect Data Cleanup Endpoint
  - [x] Verify User Session Endpoint
  - [x] Start Game Endpoint
+   - [x] Send Questions 
+   - [x] Sequential (fair) user selection
  - [x] Poke Answer Endpoint
  - [ ] Award points/score to the players each round 
  - [ ] Ending Screen Implementation?  
