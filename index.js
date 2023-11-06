@@ -8,7 +8,7 @@ const joinRoom = require("./endpoints/joinRoom.js")
 const userVerify = require("./endpoints/userVerify.js")
 const startGame = require("./endpoints/startGame.js")
 
-const { pokeAnswer } = require("./endpoints/game.js")
+const { pokeAnswer } = require("./endpoints/pokeAnswer.js")
 
 // socket connections
 apiSocket.on("connection", (socket) => {

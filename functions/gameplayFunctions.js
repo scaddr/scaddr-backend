@@ -6,9 +6,26 @@ const shuffleArray = require("shuffle-array")
 const electUser = async (roomId) => {
     const room = JSON.parse(await redisClient.hGet("rooms", roomId))
     const users = Object.keys(room["users"])
-    
-    // elected user
-    return users[Math.floor(Math.random()*users.length)]
+    const question = await redisClient.json.get(`room:${roomId}:question`) ?? {}
+
+    // if this is the first question, pick the first user 
+    if (!question?.user) {
+        return users[0]
+    }
+
+    // get the location of the current user 
+    for (let index = 0; index < users.length; index++) {
+        if (question.user != users[index]) {
+            continue
+        }
+
+        let next = index+1 < users.length ? index+1 : 0;
+        return users[next]
+    }
+
+
+    // default to first user 
+    return users[0]
 }
 
 const pokeQuestion = async (roomId) => {
@@ -25,7 +42,7 @@ const pokeQuestion = async (roomId) => {
         baitTwoCard["definitions"][0]
     ])
     
-    // save the ansewr into the database 
+    // save the answer into the database 
     const answerBody = {
         user,
         card: correctCard,
