@@ -10,15 +10,16 @@ const { broadcastConnectedUsers } = require("../functions/socketFunctions.js")
 const createRoom = async (data, callback, socket, socketData) => {
     try {
         const newRoomId = uuidv4().toString()
-        const username = (data?.username ?? "").trim()
-        const flashcardsFile = data?.cardsFile?.contents ?? ""
+        const username = typeof data?.username === "string" ? (data.username).trim() : ""
+        const maxRounds = typeof data?.maxRounds === "number" ? data.maxRounds : 5
+        const flashcardsFile = typeof data?.cardsFile?.contents === "string" ? data.cardsFile.contents : ""
         
         if (username == "" || username == "system") {
             throw new Error("Invalid username submitted")
         }
 
         if (flashcardsFile == "") {
-            throw new Error("No flashcards file submitted")
+            throw new Error("Invalid flashcards format submitted")
         }
 
         const usernamePassword = passwordGenerator.generate({
@@ -39,7 +40,7 @@ const createRoom = async (data, callback, socket, socketData) => {
             status: {
                 state: "lobby",
                 currentRound: 1,
-                maxRounds: 2
+                maxRounds: maxRounds
             },
             users: {
                 [username]: {

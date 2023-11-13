@@ -9,6 +9,14 @@ const broadcastConnectedUsers = (roomId, roomData) => {
     })
 }
 
+const broadcastRoomStatus = async (roomId) => {
+    const room = JSON.parse(await redisClient.hGet("rooms", roomId)) 
+    apiSocket.to(`room:${roomId}`).emit("gameStatus", {
+        status: "ok",
+        roomStatus: room["status"]
+    })
+}
+
 const sendQuestion = async (socket, roomId) => {
     const question = await redisClient.json.get(`room:${roomId}:question`)
     if (question === null) {
@@ -21,5 +29,6 @@ const sendQuestion = async (socket, roomId) => {
 
 module.exports = {
     broadcastConnectedUsers,
+    broadcastRoomStatus,
     sendQuestion
 }

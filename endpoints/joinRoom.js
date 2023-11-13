@@ -7,8 +7,8 @@ const { broadcastConnectedUsers, sendQuestion } = require("../functions/socketFu
 
 const joinRoom = async (data, callback, socket, socketData) => {
     try {
-        const roomId = data?.roomId ?? ""
-        const username = (data?.username ?? "").trim()
+        const roomId = typeof data?.roomId === "string" ? (data.roomId).trim() : ""
+        const username = typeof data?.username === "string" ? (data.username).trim() : ""
         
         if (roomId == "") {
             throw new Error("Invalid room ID submitted")

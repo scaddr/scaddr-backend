@@ -2,9 +2,9 @@ const redisClient = require("../redis.js")
 
 const userVerify = async (data, callback, socket, socketData) => {
     try {
-        const roomId = data?.roomId ?? ""
-        const username = (data?.username ?? "").trim()
-        const usernameHash = (data?.usernameHash ?? "").trim()
+        const roomId = typeof data?.roomId === "string" ? (data.roomId).trim() : ""
+        const username = typeof data?.username === "string" ? (data.username).trim() : ""
+        const usernameHash = typeof data?.usernameHash === "string" ? (data.usernameHash).trim() : ""
 
         if (roomId == "") {
             throw new Error("Invalid room ID submitted")

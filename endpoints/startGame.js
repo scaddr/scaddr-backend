@@ -2,13 +2,14 @@ const { apiSocket } = require("../server.js")
 const redisClient = require("../redis.js")
 
 const { pokeQuestion } = require("../functions/gameplayFunctions.js")
+const { broadcastRoomStatus } = require("../functions/socketFunctions.js")
 
 
 const startGame = async (data, callback, socket, socketData) => {
     try {
-        const roomId = data?.roomId ?? ""
-        const username = (data?.username ?? "").trim()
-        const usernameHash = (data?.usernameHash ?? "").trim()
+        const roomId = typeof data?.roomId === "string" ? (data.roomId).trim() : ""
+        const username = typeof data?.username === "string" ? (data.username).trim() : ""
+        const usernameHash = typeof data?.usernameHash === "string" ? (data.usernameHash).trim() : ""
 
         if (roomId == "") {
             throw new Error("Invalid room ID submitted")
@@ -42,10 +43,7 @@ const startGame = async (data, callback, socket, socketData) => {
         await redisClient.hSet("rooms", roomId, JSON.stringify(updatedRoom))
 
         // broadcast change to players 
-        apiSocket.to(`room:${roomId}`).emit("gameStatus", {
-            status: "ok",
-            roomStatus: updatedRoom["status"]
-        })
+        await broadcastRoomStatus(roomId);
 
         callback({
             status: "ok",

@@ -5,10 +5,10 @@ const { apiSocket } = require("../server.js")
 
 const pokeAnswer = async (data, callback, socket, socketData) => {
     try {
-        const roomId = data?.roomId ?? ""
-        const username = (data?.username ?? "")
-        const usernameHash = (data?.usernameHash ?? "")
-        const userChoice = (data?.userChoice ?? "")
+        const roomId = typeof data?.roomId === "string" ? (data.roomId).trim() : ""
+        const username = typeof data?.username === "string" ? (data.username).trim() : ""
+        const usernameHash = typeof data?.usernameHash === "string" ? (data.usernameHash).trim() : ""
+        const userChoice = typeof data?.userChoice === "string" ? data.userChoice : ""
 
         if (roomId == "") {
             throw new Error("Invalid room ID submitted")
