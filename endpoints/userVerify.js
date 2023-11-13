@@ -24,7 +24,7 @@ const userVerify = async (data, callback, socket, socketData) => {
             throw new Error("Username does not exist in this room")
         }
 
-        if (usernameHash !== roomInformation["users"][username]) {
+        if (usernameHash !== roomInformation["users"][username]["usernameHash"]) {
             throw new Error("Username hash outdated") 
         }
 

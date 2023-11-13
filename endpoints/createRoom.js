@@ -36,11 +36,20 @@ const createRoom = async (data, callback, socket, socketData) => {
         const newRoom = {
             id: newRoomId, 
             leader: username,
-            status: "lobby",
+            status: {
+                state: "lobby",
+                currentRound: 1,
+                maxRounds: 2
+            },
             users: {
-                [username]: usernameHash
+                [username]: {
+                    correct: 0,
+                    wrong: 0,
+                    usernameHash
+                }
             }
         }
+
 
         await redisClient.hSet("rooms", newRoomId, JSON.stringify(newRoom));
 

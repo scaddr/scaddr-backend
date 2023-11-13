@@ -41,7 +41,11 @@ const joinRoom = async (data, callback, socket, socketData) => {
             ...room,
             "users": {
                 ...room.users,
-                [username]: usernameHash
+                [username]: {
+                    correct: 0,
+                    wrong: 0,
+                    usernameHash
+                }
             }
         }
 

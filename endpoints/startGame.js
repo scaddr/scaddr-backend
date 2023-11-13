@@ -28,7 +28,7 @@ const startGame = async (data, callback, socket, socketData) => {
             throw new Error("Given username not found")
         }
 
-        if (usernameHash !== room["users"][username]) {
+        if (usernameHash !== room["users"][username]["usernameHash"]) {
             throw new Error("Failed to authenticate with given user/userhash")
         }
 
@@ -36,10 +36,8 @@ const startGame = async (data, callback, socket, socketData) => {
             throw new Error("Cannot start game - user is not leader")
         }
 
-        const updatedRoom = {
-            ...room,
-            status: "game"
-        } 
+        const updatedRoom = room; 
+        updatedRoom["status"]["state"] = "game"
 
         await redisClient.hSet("rooms", roomId, JSON.stringify(updatedRoom))
 

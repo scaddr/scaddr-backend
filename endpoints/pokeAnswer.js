@@ -29,7 +29,7 @@ const pokeAnswer = async (data, callback, socket, socketData) => {
             throw new Error("Username does not exist in this room")
         }
 
-        if (usernameHash !== roomInformation["users"][username]) {
+        if (usernameHash !== roomInformation["users"][username]["usernameHash"]) {
             throw new Error("Username hash outdated") 
         }
 
@@ -40,10 +40,16 @@ const pokeAnswer = async (data, callback, socket, socketData) => {
             throw new Error("Given user account is not being interrogated currently")
         }
 
+        if (answerCard["answered"]) {
+            throw new Error("Question already answered")
+        }
+
         // user choice validation
         const definitions = answerCard["card"]["definitions"]
 
         if (!(definitions.includes(userChoice))) {
+            roomInformation["users"][username]["wrong"]++; 
+
             apiSocket.to(`room:${roomId}`).emit("choiceValidation", {
                 status: "ok",
                 result: "wrong",
@@ -51,12 +57,20 @@ const pokeAnswer = async (data, callback, socket, socketData) => {
                 correctAnswer: definitions[0]
             })
         } else {
+            roomInformation["users"][username]["correct"]++; 
+
             apiSocket.to(`room:${roomId}`).emit("choiceValidation", {
                 status: "ok",
                 result: "correct",
                 userChoice
             })
         }
+
+        answerCard["answered"] = true
+        await redisClient.json.set(`room:${roomId}:answer`, "$", answerCard)
+
+        // write updated player score to database
+        await redisClient.hSet("rooms", roomId, JSON.stringify(roomInformation))
 
         // sleep 2 seconds
         await sleep(2000)

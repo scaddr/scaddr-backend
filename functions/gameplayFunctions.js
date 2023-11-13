@@ -2,7 +2,6 @@ const { apiSocket } = require("../server.js")
 const redisClient = require("../redis.js")
 const shuffleArray = require("shuffle-array")
 
-// TODO: currently just random, implement a sequential algorithm
 const electUser = async (roomId) => {
     const room = JSON.parse(await redisClient.hGet("rooms", roomId))
     const users = Object.keys(room["users"])
@@ -22,7 +21,6 @@ const electUser = async (roomId) => {
         let next = index+1 < users.length ? index+1 : 0;
         return users[next]
     }
-
 
     // default to first user 
     return users[0]
